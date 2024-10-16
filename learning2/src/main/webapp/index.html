@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AJAX Login Form</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #0d1117;
+            color: rgb(236, 224, 224);
+        }
+        form {
+            width: 300px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            background-color: #151b23;
+            justify-content: center;
+            border: 0.5px solid white;
+        }
+        input, button {
+            height: 45px;
+            border-radius: 10px;
+            background: #0d1117;
+            margin-bottom: 20px;
+            color: white;
+            padding-left: 10px;
+            border: 0.5px solid white;
+            font-size: 1rem;
+            outline: none;
+        }
+        button {
+            background-color: green;
+        }
+        label {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        input:invalid:not(:placeholder-shown) {
+            border: 0.5px solid red;
+        }
+        input:valid:not(:placeholder-shown) {
+            border: 0.5px solid green;
+        }
+        input:invalid ~ button {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        p {
+            font-size: 2rem;
+            line-height: 0;
+            text-align: center;
+        }
+        #message {
+            color: red;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+   <form name="loginForm" onSubmit="handleSubmit(event)">
+       <p>LOGIN</p>
+       <label for="email">Email:</label>
+       <input id="email" required placeholder="Enter Your Email" type="email" name="email">
+       <label for="password">Password:</label>
+       <input id="password" required minlength="6" placeholder="Enter Your Password" name="password" type="password">
+       <p id="message"></p>
+       <button>Submit</button>
+   </form>
+   
+   <script>
+      var message = document.getElementById("message");
+
+      function handleSubmit(e) {
+          e.preventDefault();
+          
+          var userEmail = document.forms["loginForm"]["email"].value;
+          var userPassword = document.forms["loginForm"]["password"].value;
+          
+          var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailPattern.test(userEmail)) {
+              message.innerText = "Please enter a valid email address.";
+              return;
+          }
+          
+          var xhr = new XMLHttpRequest();
+          xhr.open("POST", "http://localhost:8080/learning2/UserLoginServlet", true);
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          
+          xhr.onload = function() {
+              if (this.status == 200) {
+                  console.log(this.responseText);
+                  if (this.responseText.trim() === "valid user") {
+                      window.location.href = "home.html";
+                  } else {
+                      message.innerText = this.responseText;
+                  }
+              }
+          };
+          
+          xhr.onerror = function() {
+              console.log("Something went wrong!");
+              message.innerText = "An error occurred while processing your request.";
+          };
+          
+          // Safely encode the data
+          xhr.send("userEmail=" + userEmail + "&userPassword=" + userPassword);
+      }
+   </script>
+</body>
+</html>
