@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AJAX Login Form</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessible AJAX Login Form</title>
     <style>
         body {
             display: flex;
@@ -22,11 +23,13 @@
             justify-content: center;
             border: 0.5px solid white;
         }
+        input, button, label, #terms {
+            margin-top: 20px;
+        }
         input, button {
             height: 45px;
             border-radius: 10px;
             background: #0d1117;
-            margin-bottom: 20px;
             color: white;
             padding-left: 10px;
             border: 0.5px solid white;
@@ -35,10 +38,10 @@
         }
         button {
             background-color: green;
+            margin-bottom: 20px;
         }
         label {
             font-size: 1.2rem;
-            margin-bottom: 10px;
         }
         input:invalid:not(:placeholder-shown) {
             border: 0.5px solid red;
@@ -50,65 +53,115 @@
             opacity: 0.5;
             pointer-events: none;
         }
-        p {
-            font-size: 2rem;
-            line-height: 0;
-            text-align: center;
+        .error-message {
+            color: red;
+            font-size: 0.875rem;
         }
         #message {
             color: red;
             font-size: 1rem;
         }
+        #terms {
+            height: 15px;
+        }
+        h1 {
+            text-align: center;
+            line-height: 0;
+        }
     </style>
 </head>
 <body>
-   <form name="loginForm" onSubmit="handleSubmit(event)">
-       <p>LOGIN</p>
+   <form name="loginForm" onSubmit="handleSubmit(event)" aria-labelledby="form-title">
+       <h1 id="form-title">Login</h1>
+       
        <label for="email">Email:</label>
-       <input id="email" required placeholder="Enter Your Email" type="email" name="email">
+       <input id="email" required placeholder="Enter Your Email" name="email" aria-describedby="emailHelp" aria-required="true">
+       <span id="emailHelp" class="error-message" aria-live="polite"></span>
+       
        <label for="password">Password:</label>
-       <input id="password" required minlength="6" placeholder="Enter Your Password" name="password" type="password">
-       <p id="message"></p>
+       <input id="password" required placeholder="Enter Your Password" name="password" type="password" aria-describedby="passwordHelp" aria-required="true">
+       <span id="passwordHelp" class="error-message" aria-live="polite"></span>
+       
+       <label for="terms">
+           <input type="checkbox" id="terms" name="terms" aria-required="true" aria-describedby="termsHelp"> I accept the terms and conditions
+       </label>
+       <span id="termsHelp" class="error-message" aria-live="polite"></span>
+
        <button>Submit</button>
    </form>
    
    <script>
-      var message = document.getElementById("message");
+      var emailMessage = document.getElementById("emailHelp");
+      var passwordMessage = document.getElementById("passwordHelp");
+      var termsMessage = document.getElementById("termsHelp");
 
       function handleSubmit(e) {
           e.preventDefault();
           
           var userEmail = document.forms["loginForm"]["email"].value;
           var userPassword = document.forms["loginForm"]["password"].value;
-          
+          var termsChecked = document.forms["loginForm"]["terms"].checked;
+
           var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          
+          // Reset error messages
+          emailMessage.innerText = "";
+          passwordMessage.innerText = "";
+          termsMessage.innerText = "";
+
+          // Email validation
           if (!emailPattern.test(userEmail)) {
-              message.innerText = "Please enter a valid email address.";
+              emailMessage.innerText = "Please enter a valid email address.";
+              document.getElementById("email").focus();
               return;
           }
-          
+
+          // Password validation
+          let errorMessages = [];
+          if (userPassword.length < 8) {
+              errorMessages.push("8 characters");
+          }
+          if (!/[A-Z]/.test(userPassword)) {
+              errorMessages.push("1 uppercase letter");
+          }
+          if (!/[0-9]/.test(userPassword)) {
+              errorMessages.push("1 number");
+          }
+          if (!/[!@#$%^&*]/.test(userPassword)) {
+              errorMessages.push("1 special character");
+          }
+
+          if (errorMessages.length > 0) {
+              passwordMessage.innerText = "Password must contain: " + errorMessages.join(", ") + ".";
+              document.getElementById("password").focus();
+              return;
+          }
+
+          // Terms and conditions validation
+          if (!termsChecked) {
+              termsMessage.innerText = "You must accept the terms and conditions.";
+              document.getElementById("terms").focus();
+              return;
+          }
+
+          // AJAX request
           var xhr = new XMLHttpRequest();
           xhr.open("POST", "http://localhost:8080/learning2/UserLoginServlet", true);
           xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           
           xhr.onload = function() {
               if (this.status == 200) {
-                  console.log(this.responseText);
-                  if (this.responseText.trim() === "valid user") {
-                      window.location.href = "home.html";
-                  } else {
-                      message.innerText = this.responseText;
-                  }
+                  window.location.href = "home.html";
+              } else if (this.status == 401) {
+                  passwordMessage.innerText = "Wrong password.";
+              } else if (this.status == 404) {
+                  emailMessage.innerText = "User not found.";
               }
           };
           
-          xhr.onerror = function() {
-              console.log("Something went wrong!");
-              message.innerText = "An error occurred while processing your request.";
-          };
           
           // Safely encode the data
-          xhr.send("userEmail=" + userEmail + "&userPassword=" + userPassword);
+          xhr.send("userEmail=" + encodeURIComponent(userEmail) + "&userPassword=" + encodeURIComponent(userPassword));
       }
    </script>
 </body>
