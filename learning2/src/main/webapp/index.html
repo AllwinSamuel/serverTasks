@@ -159,7 +159,9 @@
               }
           };
           
-          
+          xhr.onerror = function() {
+             termsMessage.innerText = "An error occurred while processing your request.";
+           };
           // Safely encode the data
           xhr.send("userEmail=" + encodeURIComponent(userEmail) + "&userPassword=" + encodeURIComponent(userPassword));
       }
